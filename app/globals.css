@@ -1,0 +1,150 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+
+  --color-header: var(--header);
+  --color-header-foreground: var(--header-foreground);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+:root {
+  color-scheme: light;
+
+  /* ─── Native Made Accessories — Clean, bright, artisanal luxury ─── */
+
+  /* Pure crisp white background with very subtle warmth */
+  --background: oklch(0.995 0.002 80);
+  --foreground: oklch(0.18 0.015 50);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.015 50);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.015 50);
+
+  /* Rich deep terracotta/clay as primary — warm, earthy, bold */
+  --primary: oklch(0.42 0.1 42);
+  --primary-foreground: oklch(0.99 0.003 80);
+
+  /* Light warm sand for secondary surfaces */
+  --secondary: oklch(0.96 0.012 75);
+  --secondary-foreground: oklch(0.28 0.018 50);
+
+  /* Very light cream muted areas */
+  --muted: oklch(0.972 0.008 78);
+  --muted-foreground: oklch(0.52 0.014 58);
+
+  /* Vibrant turquoise accent — signature NMA color */
+  --accent: oklch(0.62 0.13 198);
+  --accent-foreground: oklch(0.99 0.003 90);
+
+  --destructive: oklch(0.55 0.2 27);
+
+  --border: oklch(0.91 0.01 78);
+  --input: oklch(0.91 0.01 78);
+  --ring: oklch(0.62 0.13 198);
+  --radius: 0.375rem;
+
+  /* Header: deep warm charcoal with a hint of warmth */
+  --header: oklch(0.16 0.018 48);
+  --header-foreground: oklch(0.97 0.005 82);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.01em;
+  }
+}
+
+/* ─── Smooth hero fade transitions ─── */
+@keyframes heroFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes heroFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+.hero-slide-enter {
+  animation: heroFadeIn 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.hero-slide-exit {
+  animation: heroFadeOut 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ─── Scrollbar hide for rails ─── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ─── Subtle entrance animations ─── */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-up {
+  animation: fadeUp 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ─── WhatsApp pulse ring ─── */
+@keyframes wa-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(37,211,102,0.55); }
+  70%  { box-shadow: 0 0 0 12px rgba(37,211,102,0); }
+  100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); }
+}
+.wa-pulse {
+  animation: wa-pulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
