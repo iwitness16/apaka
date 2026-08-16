@@ -4286,10 +4286,6 @@ ON CONFLICT (handle) DO UPDATE SET
   category    = EXCLUDED.category,
   images      = EXCLUDED.images,
   sizes       = EXCLUDED.sizes,
-  option_name = EXCLUDED.option_name,
-  vendor      = EXCLUDED.vendor,
-  tags        = EXCLUDED.tags,
-  updated_at  = NOW();
 
 INSERT INTO products (id, handle, title, description, price, category, images, sizes, option_name, vendor, tags, is_active, created_at, updated_at) VALUES
   (uuid_generate_v4(), '4-stone-sleeping-beauty-cuff-native', '4 Stone Sleeping Beauty Cuff *Native', 'Artist- Wilson Dawes 6.5" with a gap of 1 1/8"', 589.00, 'turquoise-jewelry', ARRAY['https://cdn.shopify.com/s/files/1/0053/8447/0592/files/rn-image_picker_lib_temp_6e2ea483-2353-4bfd-a6f3-fc4682ca047b.jpg?v=1786043208'], ARRAY[]::TEXT[], 'Title', 'My Pretty in Pink', ARRAY[]::TEXT[], TRUE, NOW(), NOW()),
