@@ -1,2 +1,8 @@
+packages:
+  - "."
+
 allowBuilds:
-  msw: true
+  msw: set this to true or false
+
+onlyBuiltDependencies:
+  - msw
