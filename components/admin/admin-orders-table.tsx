@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   CheckCircle2, ChevronDown, ChevronUp, Clock,
-  Eye, Search, Trash2, XCircle,
+  Eye, Loader2, Search, Trash2, XCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -37,6 +37,13 @@ function fmtDate(s: string) {
 type SortKey = "date" | "name" | "total" | "status"
 type Filter  = "all" | "pending" | "completed" | "installment"
 
+const FILTERS: { key: Filter; label: string }[] = [
+  { key: "all",         label: "All"          },
+  { key: "pending",     label: "Pending"      },
+  { key: "completed",   label: "Completed"    },
+  { key: "installment", label: "Installments" },
+]
+
 export function AdminOrdersTable({ orders }: { orders: Order[] }) {
   const router = useRouter()
   const [q,          setQ]          = useState("")
@@ -48,16 +55,16 @@ export function AdminOrdersTable({ orders }: { orders: Order[] }) {
 
   const filtered = useMemo(() => {
     let list = orders.filter((o) => {
-      const search = q.toLowerCase()
-      if (search && !(
-        o.customer_name.toLowerCase().includes(search) ||
-        o.customer_email.toLowerCase().includes(search) ||
-        o.customer_whatsapp.toLowerCase().includes(search) ||
-        o.id.toLowerCase().includes(search)
+      const s = q.toLowerCase()
+      if (s && !(
+        o.customer_name.toLowerCase().includes(s) ||
+        o.customer_email.toLowerCase().includes(s) ||
+        o.customer_whatsapp.toLowerCase().includes(s) ||
+        o.id.toLowerCase().includes(s)
       )) return false
-      if (filter === "pending"     && o.is_completed)              return false
-      if (filter === "completed"   && !o.is_completed)             return false
-      if (filter === "installment" && o.plan_type !== "installment") return false
+      if (filter === "pending"      && o.is_completed)               return false
+      if (filter === "completed"    && !o.is_completed)              return false
+      if (filter === "installment"  && o.plan_type !== "installment") return false
       return true
     })
 
@@ -80,24 +87,22 @@ export function AdminOrdersTable({ orders }: { orders: Order[] }) {
 
   const SortIcon = ({ k }: { k: SortKey }) =>
     sortKey === k
-      ? sortAsc
-        ? <ChevronUp className="size-3.5" />
-        : <ChevronDown className="size-3.5" />
-      : null
+      ? sortAsc ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />
+      : <ChevronDown className="size-3 opacity-0 group-hover:opacity-40" />
 
   const handleComplete = async (id: string) => {
     setCompleting(id)
     await fetch(`/api/admin/orders/${id}`, {
-      method:  "PATCH",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ is_completed: true }),
+      body: JSON.stringify({ is_completed: true }),
     })
     setCompleting(null)
     router.refresh()
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this order? This action cannot be undone.")) return
+    if (!confirm("Permanently delete this order? This cannot be undone.")) return
     setDeletingId(id)
     const res = await fetch(`/api/admin/orders/${id}`, { method: "DELETE" })
     if (!res.ok) {
@@ -108,30 +113,23 @@ export function AdminOrdersTable({ orders }: { orders: Order[] }) {
     router.refresh()
   }
 
-  const FILTERS: { key: Filter; label: string }[] = [
-    { key: "all",        label: "All"         },
-    { key: "pending",    label: "Pending"      },
-    { key: "completed",  label: "Completed"    },
-    { key: "installment",label: "Installments" },
-  ]
-
   return (
     <div>
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 border-b border-white/8 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* ── Toolbar ── */}
+      <div className="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Search */}
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/30" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
           <input
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search name, email, phone…"
-            className="w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-4 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-[#c0392b]/50 focus:ring-1 focus:ring-[#c0392b]/20 sm:w-72"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-4 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100 sm:w-72"
           />
         </div>
 
-        {/* Filters */}
+        {/* Filter tabs */}
         <div className="flex flex-wrap gap-1.5">
           {FILTERS.map(({ key, label }) => (
             <button
@@ -139,10 +137,10 @@ export function AdminOrdersTable({ orders }: { orders: Order[] }) {
               type="button"
               onClick={() => setFilter(key)}
               className={cn(
-                "rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] transition-all",
+                "rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide transition-all",
                 filter === key
-                  ? "bg-[#c0392b] text-white"
-                  : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white"
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
               )}
             >
               {label}
@@ -152,159 +150,254 @@ export function AdminOrdersTable({ orders }: { orders: Order[] }) {
       </div>
 
       {/* Count */}
-      <div className="px-5 py-2.5">
-        <p className="text-[11px] text-white/30">
+      <div className="px-5 py-2">
+        <p className="text-xs text-gray-400">
           {filtered.length} order{filtered.length !== 1 ? "s" : ""} shown
         </p>
       </div>
 
-      {/* Table */}
+      {/* ── Empty state ── */}
       {filtered.length === 0 ? (
-        <div className="px-5 py-16 text-center">
-          <XCircle className="mx-auto size-10 text-white/15" />
-          <p className="mt-3 text-sm text-white/30">No orders match your filters.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="mb-3 flex size-14 items-center justify-center rounded-full bg-gray-100">
+            <XCircle className="size-7 text-gray-300" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">No orders match your filters</p>
+          <p className="mt-1 text-xs text-gray-400">Try adjusting the search or filter.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/8">
-                {[
-                  { key: "date",   label: "Date"    },
-                  { key: "name",   label: "Customer"},
-                  { key: "total",  label: "Total"   },
-                  { key: null,     label: "Plan"    },
-                  { key: "status", label: "Status"  },
-                  { key: null,     label: "Actions" },
-                ].map(({ key, label }) => (
-                  <th
-                    key={label}
-                    onClick={() => key && toggleSort(key as SortKey)}
-                    className={cn(
-                      "px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40",
-                      key && "cursor-pointer hover:text-white/70"
-                    )}
-                  >
-                    <span className="flex items-center gap-1">
-                      {label}
-                      {key && <SortIcon k={key as SortKey} />}
-                    </span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {filtered.map((order) => {
-                const paidCount   = order.installment_payments?.filter((i) => i.is_paid).length ?? 0
-                const totalInstall = order.installment_payments?.length ?? 0
-                const canComplete = order.plan_type === "single"
-                  ? !order.is_completed
-                  : !order.is_completed && (totalInstall === 0 || paidCount === totalInstall)
-
-                return (
-                  <tr
-                    key={order.id}
-                    className="group transition-colors hover:bg-white/3"
-                  >
-                    {/* Date */}
-                    <td className="px-5 py-3.5 text-[12px] text-white/50">
-                      {fmtDate(order.created_at)}
-                    </td>
-
-                    {/* Customer */}
-                    <td className="px-5 py-3.5">
-                      <p className="font-medium text-white">
-                        {order.customer_name || <span className="text-white/30">—</span>}
-                      </p>
-                      <p className="text-[11px] text-white/40">{order.customer_email}</p>
-                      {order.customer_whatsapp && (
-                        <p className="text-[11px] text-white/30">{order.customer_whatsapp}</p>
+        <>
+          {/* ── Desktop table ── */}
+          <div className="hidden overflow-x-auto sm:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/50">
+                  {(
+                    [
+                      { key: "date",   label: "Date"     },
+                      { key: "name",   label: "Customer" },
+                      { key: "total",  label: "Total"    },
+                      { key: null,     label: "Plan"     },
+                      { key: "status", label: "Status"   },
+                      { key: null,     label: "Actions"  },
+                    ] as { key: SortKey | null; label: string }[]
+                  ).map(({ key, label }) => (
+                    <th
+                      key={label}
+                      onClick={() => key && toggleSort(key)}
+                      className={cn(
+                        "group px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-400",
+                        key && "cursor-pointer select-none hover:text-gray-600"
                       )}
-                    </td>
+                    >
+                      <span className="flex items-center gap-1">
+                        {label}
+                        {key && <SortIcon k={key} />}
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map((order) => {
+                  const paidCount    = order.installment_payments?.filter((i) => i.is_paid).length ?? 0
+                  const totalInstall = order.installment_payments?.length ?? 0
+                  const canComplete  =
+                    !order.is_completed &&
+                    (order.plan_type === "single" || totalInstall === 0 || paidCount === totalInstall)
 
-                    {/* Total */}
-                    <td className="px-5 py-3.5 font-semibold text-white">
-                      {fmt(order.subtotal)}
-                    </td>
+                  return (
+                    <tr key={order.id} className="group transition-colors hover:bg-gray-50/70">
+                      {/* Date */}
+                      <td className="whitespace-nowrap px-5 py-4 text-xs text-gray-500">
+                        {fmtDate(order.created_at)}
+                      </td>
 
-                    {/* Plan */}
-                    <td className="px-5 py-3.5">
-                      {order.plan_type === "single" ? (
-                        <span className="rounded-full bg-blue-500/15 px-2.5 py-1 text-[10px] font-semibold text-blue-400">
-                          One-Time
-                        </span>
-                      ) : (
-                        <div>
-                          <span className="rounded-full bg-purple-500/15 px-2.5 py-1 text-[10px] font-semibold text-purple-400">
-                            {order.installments}× {order.cadence}
+                      {/* Customer */}
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-gray-900">
+                          {order.customer_name || <span className="text-gray-300">—</span>}
+                        </p>
+                        <p className="text-xs text-gray-400 truncate max-w-[180px]">{order.customer_email}</p>
+                        {order.customer_whatsapp && (
+                          <p className="text-xs text-gray-400">{order.customer_whatsapp}</p>
+                        )}
+                      </td>
+
+                      {/* Total */}
+                      <td className="whitespace-nowrap px-5 py-4 font-semibold text-gray-900">
+                        {fmt(order.subtotal)}
+                      </td>
+
+                      {/* Plan */}
+                      <td className="px-5 py-4">
+                        {order.plan_type === "single" ? (
+                          <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold text-blue-700">
+                            One-Time
                           </span>
-                          {totalInstall > 0 && (
-                            <p className="mt-1 text-[10px] text-white/35">
-                              {paidCount}/{totalInstall} paid
-                            </p>
+                        ) : (
+                          <div className="space-y-1">
+                            <span className="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-1 text-[10px] font-semibold text-purple-700">
+                              {order.installments}× {order.cadence}
+                            </span>
+                            {totalInstall > 0 && (
+                              <p className="text-[10px] text-gray-400">{paidCount}/{totalInstall} paid</p>
+                            )}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Status */}
+                      <td className="whitespace-nowrap px-5 py-4">
+                        {order.is_completed ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                            <CheckCircle2 className="size-3" /> Completed
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                            <Clock className="size-3" /> Pending
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-1.5">
+                          <Link
+                            href={`/adminapaka/orders/${order.id}`}
+                            title="View Details"
+                            className="flex size-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-900"
+                          >
+                            <Eye className="size-3.5" />
+                          </Link>
+
+                          {canComplete && (
+                            <button
+                              type="button"
+                              title="Mark Completed"
+                              disabled={completing === order.id}
+                              onClick={() => handleComplete(order.id)}
+                              className="flex size-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50"
+                            >
+                              {completing === order.id
+                                ? <Loader2 className="size-3.5 animate-spin" />
+                                : <CheckCircle2 className="size-3.5" />}
+                            </button>
+                          )}
+
+                          {order.is_completed && (
+                            <button
+                              type="button"
+                              title="Delete Order"
+                              disabled={deletingId === order.id}
+                              onClick={() => handleDelete(order.id)}
+                              className="flex size-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-500 shadow-sm transition hover:bg-red-100 disabled:opacity-50"
+                            >
+                              {deletingId === order.id
+                                ? <Loader2 className="size-3.5 animate-spin" />
+                                : <Trash2 className="size-3.5" />}
+                            </button>
                           )}
                         </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ── Mobile card list ── */}
+          <div className="divide-y divide-gray-100 sm:hidden">
+            {filtered.map((order) => {
+              const paidCount    = order.installment_payments?.filter((i) => i.is_paid).length ?? 0
+              const totalInstall = order.installment_payments?.length ?? 0
+              const canComplete  =
+                !order.is_completed &&
+                (order.plan_type === "single" || totalInstall === 0 || paidCount === totalInstall)
+
+              return (
+                <div key={order.id} className="px-5 py-4 space-y-3">
+                  {/* Top row: customer + status */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">
+                        {order.customer_name || "—"}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">{order.customer_email}</p>
+                      {order.customer_whatsapp && (
+                        <p className="text-xs text-gray-400">{order.customer_whatsapp}</p>
                       )}
-                    </td>
+                    </div>
+                    {order.is_completed ? (
+                      <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                        <CheckCircle2 className="size-3" /> Done
+                      </span>
+                    ) : (
+                      <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-700">
+                        <Clock className="size-3" /> Pending
+                      </span>
+                    )}
+                  </div>
 
-                    {/* Status */}
-                    <td className="px-5 py-3.5">
-                      {order.is_completed ? (
-                        <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400">
-                          <CheckCircle2 className="size-3.5" /> Completed
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-400">
-                          <Clock className="size-3.5" /> Pending
-                        </span>
-                      )}
-                    </td>
+                  {/* Middle row: total + plan + date */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-bold text-gray-900">{fmt(order.subtotal)}</span>
+                    {order.plan_type === "single" ? (
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                        One-Time
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">
+                        {order.installments}× {order.cadence}
+                        {totalInstall > 0 && ` · ${paidCount}/${totalInstall} paid`}
+                      </span>
+                    )}
+                    <span className="text-xs text-gray-400">{fmtDate(order.created_at)}</span>
+                  </div>
 
-                    {/* Actions */}
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2">
-                        {/* View detail */}
-                        <Link
-                          href={`/adminapaka/orders/${order.id}`}
-                          title="View Details"
-                          className="flex size-8 items-center justify-center rounded-lg bg-white/5 text-white/50 transition-all hover:bg-white/10 hover:text-white"
-                        >
-                          <Eye className="size-3.5" />
-                        </Link>
+                  {/* Action row */}
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/adminapaka/orders/${order.id}`}
+                      className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm hover:bg-gray-50"
+                    >
+                      <Eye className="size-3.5" /> View
+                    </Link>
 
-                        {/* Mark complete */}
-                        {canComplete && (
-                          <button
-                            type="button"
-                            title="Mark as Completed"
-                            disabled={completing === order.id}
-                            onClick={() => handleComplete(order.id)}
-                            className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 transition-all hover:bg-emerald-500/20 disabled:opacity-50"
-                          >
-                            <CheckCircle2 className="size-3.5" />
-                          </button>
-                        )}
+                    {canComplete && (
+                      <button
+                        type="button"
+                        disabled={completing === order.id}
+                        onClick={() => handleComplete(order.id)}
+                        className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                      >
+                        {completing === order.id
+                          ? <Loader2 className="size-3.5 animate-spin" />
+                          : <CheckCircle2 className="size-3.5" />}
+                        Complete
+                      </button>
+                    )}
 
-                        {/* Delete */}
-                        {order.is_completed && (
-                          <button
-                            type="button"
-                            title="Delete Order"
-                            disabled={deletingId === order.id}
-                            onClick={() => handleDelete(order.id)}
-                            className="flex size-8 items-center justify-center rounded-lg bg-red-500/10 text-red-400 transition-all hover:bg-red-500/20 disabled:opacity-50"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                    {order.is_completed && (
+                      <button
+                        type="button"
+                        disabled={deletingId === order.id}
+                        onClick={() => handleDelete(order.id)}
+                        className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
+                      >
+                        {deletingId === order.id
+                          ? <Loader2 className="size-3.5 animate-spin" />
+                          : <Trash2 className="size-3.5" />}
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
       )}
     </div>
   )

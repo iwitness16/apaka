@@ -35,78 +35,78 @@ export default async function AdminDashboardPage() {
       label: "Total Orders",
       value: total ?? 0,
       icon: ShoppingBag,
-      color: "text-blue-400",
-      bg: "bg-blue-500/10",
-      ring: "ring-blue-500/20",
+      valueColor: "text-blue-600",
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-600",
+      border: "border-blue-100",
     },
     {
       label: "Pending",
       value: pending ?? 0,
       icon: Clock,
-      color: "text-amber-400",
-      bg: "bg-amber-500/10",
-      ring: "ring-amber-500/20",
+      valueColor: "text-amber-600",
+      iconBg: "bg-amber-50",
+      iconColor: "text-amber-600",
+      border: "border-amber-100",
     },
     {
       label: "Completed",
       value: completed ?? 0,
       icon: CheckCircle2,
-      color: "text-emerald-400",
-      bg: "bg-emerald-500/10",
-      ring: "ring-emerald-500/20",
+      valueColor: "text-emerald-600",
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
+      border: "border-emerald-100",
     },
     {
       label: "On Installment",
       value: installment ?? 0,
       icon: CreditCard,
-      color: "text-purple-400",
-      bg: "bg-purple-500/10",
-      ring: "ring-purple-500/20",
+      valueColor: "text-purple-600",
+      iconBg: "bg-purple-50",
+      iconColor: "text-purple-600",
+      border: "border-purple-100",
     },
   ]
 
   return (
-    <div className="space-y-7">
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Page header */}
       <div className="flex items-center gap-3">
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-[#c0392b]/20 ring-1 ring-[#c0392b]/30">
-          <LayoutDashboard className="size-5 text-[#c0392b]" />
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-red-50">
+          <LayoutDashboard className="size-5 text-red-600" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">Order Dashboard</h1>
-          <p className="text-[13px] text-white/40">
+          <h1 className="text-xl font-bold text-gray-900">Order Dashboard</h1>
+          <p className="text-sm text-gray-500">
             Track payments, installments &amp; order status
           </p>
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stats.map(({ label, value, icon: Icon, color, bg, ring }) => (
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {stats.map(({ label, value, icon: Icon, valueColor, iconBg, iconColor, border }) => (
           <div
             key={label}
-            className={`rounded-2xl border border-white/8 p-5 backdrop-blur-sm ring-1 ${ring} bg-white/4`}
+            className={`rounded-2xl border bg-white p-5 shadow-sm ${border}`}
           >
-            <div className={`mb-3 inline-flex rounded-xl p-2 ${bg}`}>
-              <Icon className={`size-4 ${color}`} />
+            <div className={`mb-3 inline-flex rounded-xl p-2.5 ${iconBg}`}>
+              <Icon className={`size-4 ${iconColor}`} />
             </div>
-            <p className={`text-3xl font-bold ${color}`}>{value}</p>
-            <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.14em] text-white/40">
+            <p className={`text-3xl font-bold ${valueColor}`}>{value}</p>
+            <p className="mt-1 text-xs font-medium uppercase tracking-wide text-gray-400">
               {label}
             </p>
           </div>
         ))}
       </div>
 
-      {/* Orders table card */}
-      <div className="overflow-hidden rounded-2xl border border-white/8 bg-white/4 backdrop-blur-sm">
-        <div className="flex items-center justify-between border-b border-white/8 px-6 py-4">
-          <div>
-            <h2 className="text-sm font-semibold text-white">All Orders</h2>
-            <p className="text-[12px] text-white/35">
-              {orders?.length ?? 0} orders loaded
-            </p>
-          </div>
+      {/* Orders table */}
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-100 px-6 py-4">
+          <h2 className="text-sm font-semibold text-gray-900">All Orders</h2>
+          <p className="text-xs text-gray-400">{orders?.length ?? 0} orders loaded</p>
         </div>
         <AdminOrdersTable orders={orders ?? []} />
       </div>
