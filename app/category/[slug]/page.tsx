@@ -5,7 +5,6 @@ import { CollectionView } from "@/components/collection/collection-view"
 import { categories, getCategory } from "@/lib/catalog"
 import { getProductsByCategory } from "@/lib/products-service"
 
-// Force dynamic rendering — data comes from Supabase at request time
 export const dynamic = "force-dynamic"
 
 export async function generateMetadata({
@@ -14,15 +13,13 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const category = getCategory(slug)
+  const cat = getCategory(slug)
   return {
-    title: category
-      ? `${category.label} — Native Made Accessories`
+    title: cat
+      ? `${cat.label} — Native Made Accessories`
       : "Collection — Native Made Accessories",
   }
 }
-
-const clothing = categories.filter((c) => c.group === "clothing")
 
 export default async function CategoryPage({
   params,
@@ -34,7 +31,6 @@ export default async function CategoryPage({
   if (!category) notFound()
 
   const products = await getProductsByCategory(slug)
-  const showChips = category.group === "clothing"
 
   return (
     <div className="pt-10">
@@ -46,28 +42,27 @@ export default async function CategoryPage({
         <p className="mt-2 text-sm text-muted-foreground">{products.length} items</p>
       </div>
 
-      {showChips && (
-        <div className="mx-auto mt-8 flex max-w-[1000px] flex-wrap justify-center gap-2.5 px-4">
-          {clothing.map((c) => (
-            <Link
-              key={c.slug}
-              href={`/category/${c.slug}`}
-              className={
-                c.slug === slug
-                  ? "bg-primary px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-primary-foreground rounded-full"
-                  : "bg-secondary px-5 py-2 text-[11px] font-medium uppercase tracking-[0.15em] text-secondary-foreground rounded-full transition-colors hover:bg-primary hover:text-primary-foreground"
-              }
-            >
-              {c.label}
-            </Link>
-          ))}
-        </div>
-      )}
+      {/* Category chip nav */}
+      <div className="mx-auto mt-8 flex max-w-[1000px] flex-wrap justify-center gap-2.5 px-4">
+        {categories.map((c) => (
+          <Link
+            key={c.slug}
+            href={`/category/${c.slug}`}
+            className={
+              c.slug === slug
+                ? "bg-primary px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-primary-foreground rounded-full"
+                : "bg-secondary px-5 py-2 text-[11px] font-medium uppercase tracking-[0.15em] text-secondary-foreground rounded-full transition-colors hover:bg-primary hover:text-primary-foreground"
+            }
+          >
+            {c.label}
+          </Link>
+        ))}
+      </div>
 
       {products.length === 0 ? (
         <div className="mt-20 text-center px-4">
           <p className="text-muted-foreground text-sm">
-            No products found in this category yet. Check back soon!
+            No products in this category yet — check back soon!
           </p>
         </div>
       ) : (

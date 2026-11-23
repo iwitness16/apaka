@@ -2,114 +2,133 @@
  * products-service.ts
  *
  * All async data-fetching functions that hit Supabase.
- * Used by dynamic pages: /category/[slug], /product/[handle], /new-arrivals
- *
- * The home page continues to use the static functions in catalog.ts.
+ * Column names match the new Etsy-sourced schema (new-schema.sql).
  */
 
 import { supabase } from "./supabase"
-import type { Product, CategorySlug } from "./types"
+import type { CategorySlug, Product } from "./types"
 
-// ─── Row shape returned by Supabase ──────────────────────────────────────────
-interface ProductRow {
-  handle: string
-  title: string
-  description: string
-  price: number
-  category: string
-  images: string[]
-  sizes: string[]
-  option_name: string
-  vendor?: string
-  tags?: string[]
-  is_active?: boolean
-}
+// ── Fields to SELECT ──────────────────────────────────────────────────────────
+const PRODUCT_FIELDS = `
+  handle, etsy_id, etsy_url,
+  title, description, category,
+  price, original_price,
+  main_image, images,
+  materials, gemstone, gem_color, size_info, style_info,
+  seller_name, seller_url,
+  rating, review_count,
+  is_active, is_sale, free_shipping
+`.trim()
 
-// ─── Map DB row → Product interface ──────────────────────────────────────────
-function toProduct(row: ProductRow): Product {
+// ── Row → Product ─────────────────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toProduct(row: any): Product {
   return {
-    handle: row.handle,
-    title: row.title,
-    description: row.description ?? "",
-    price: Number(row.price),
-    category: row.category as CategorySlug,
-    images: row.images ?? [],
-    sizes: row.sizes ?? [],
-    optionName: row.option_name ?? "",
+    handle:         row.handle         ?? "",
+    etsy_id:        row.etsy_id        ?? "",
+    etsy_url:       row.etsy_url       ?? "",
+    title:          row.title          ?? "",
+    description:    row.description    ?? "",
+    category:       (row.category as CategorySlug) ?? "turquoise-jewelry",
+    price:          Number(row.price)  ?? 0,
+    original_price: row.original_price ? Number(row.original_price) : null,
+    main_image:     row.main_image     ?? "",
+    images:         Array.isArray(row.images) ? row.images : [],
+    materials:      row.materials      ?? "",
+    gemstone:       row.gemstone       ?? "",
+    gem_color:      row.gem_color      ?? "",
+    size_info:      row.size_info      ?? "",
+    style_info:     row.style_info     ?? "",
+    seller_name:    row.seller_name    ?? "",
+    seller_url:     row.seller_url     ?? "",
+    rating:         row.rating         ?? null,
+    review_count:   row.review_count   ?? 0,
+    is_active:      row.is_active      ?? true,
+    is_sale:        row.is_sale        ?? false,
+    free_shipping:  row.free_shipping  ?? false,
   }
 }
 
-// ─── Fetch all products in a category ────────────────────────────────────────
+// ── Products by category ──────────────────────────────────────────────────────
 export async function getProductsByCategory(slug: string): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("handle, title, description, price, category, images, sizes, option_name")
+    .select(PRODUCT_FIELDS)
     .eq("category", slug)
     .eq("is_active", true)
-    .order("title", { ascending: true })
+    .order("created_at", { ascending: false })
+    .limit(300)
 
   if (error) {
-    console.error("[products-service] getProductsByCategory error:", error.message)
+    console.error("[products-service] getProductsByCategory:", error.message)
     return []
   }
-
-  return (data as ProductRow[]).map(toProduct)
+  return (data ?? []).map(toProduct)
 }
 
-// ─── Fetch a single product by handle ────────────────────────────────────────
+// ── Single product by handle ──────────────────────────────────────────────────
 export async function getProduct(handle: string): Promise<Product | null> {
   const { data, error } = await supabase
     .from("products")
-    .select("handle, title, description, price, category, images, sizes, option_name")
+    .select(PRODUCT_FIELDS)
     .eq("handle", handle)
     .eq("is_active", true)
     .single()
 
   if (error) {
-    // "PGRST116" = no rows found — not a real error
-    if (error.code !== "PGRST116") {
-      console.error("[products-service] getProduct error:", error.message)
-    }
+    if (error.code !== "PGRST116")
+      console.error("[products-service] getProduct:", error.message)
     return null
   }
-
-  return toProduct(data as ProductRow)
+  return toProduct(data)
 }
 
-// ─── Fetch all active products (new-arrivals) ─────────────────────────────────
+// ── All active products (new arrivals / search) ───────────────────────────────
 export async function getAllProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("handle, title, description, price, category, images, sizes, option_name")
+    .select(PRODUCT_FIELDS)
     .eq("is_active", true)
     .order("created_at", { ascending: false })
+    .limit(500)
 
   if (error) {
-    console.error("[products-service] getAllProducts error:", error.message)
+    console.error("[products-service] getAllProducts:", error.message)
     return []
   }
-
-  return (data as ProductRow[]).map(toProduct)
+  return (data ?? []).map(toProduct)
 }
 
-// ─── Fetch related products (same category, excluding current) ───────────────
-export async function getRelatedProducts(
-  product: Product,
-  limit = 4
-): Promise<Product[]> {
+// ── Related products (same category, excluding current) ───────────────────────
+export async function getRelatedProducts(product: Product, limit = 4): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("handle, title, description, price, category, images, sizes, option_name")
+    .select(PRODUCT_FIELDS)
     .eq("category", product.category)
     .eq("is_active", true)
     .neq("handle", product.handle)
-    .order("title", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(limit)
 
   if (error) {
-    console.error("[products-service] getRelatedProducts error:", error.message)
+    console.error("[products-service] getRelatedProducts:", error.message)
     return []
   }
+  return (data ?? []).map(toProduct)
+}
 
-  return (data as ProductRow[]).map(toProduct)
+// ── Featured products (mix of categories for home page) ───────────────────────
+export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_FIELDS)
+    .eq("is_active", true)
+    .order("review_count", { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    console.error("[products-service] getFeaturedProducts:", error.message)
+    return []
+  }
+  return (data ?? []).map(toProduct)
 }

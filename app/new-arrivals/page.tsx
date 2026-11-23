@@ -1,13 +1,11 @@
 import { CollectionView } from "@/components/collection/collection-view"
 import { getAllProducts } from "@/lib/products-service"
 
-// Force dynamic rendering — data comes from Supabase at request time
 export const dynamic = "force-dynamic"
 
 export const metadata = {
   title: "New Arrivals — Native Made Accessories",
-  description:
-    "Shop the latest handcrafted jewelry, accessories and apparel at Native Made Accessories.",
+  description: "Shop the latest handcrafted Native American jewelry and accessories.",
 }
 
 export default async function NewArrivalsPage() {
@@ -27,9 +25,7 @@ export default async function NewArrivalsPage() {
 
       {products.length === 0 ? (
         <div className="mt-20 text-center px-4">
-          <p className="text-muted-foreground text-sm">
-            New products are on the way — check back soon!
-          </p>
+          <p className="text-muted-foreground text-sm">New products are on the way — check back soon!</p>
         </div>
       ) : (
         <CollectionView products={products} />

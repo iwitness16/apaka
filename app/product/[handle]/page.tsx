@@ -2,10 +2,8 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { ProductDetail } from "@/components/product/product-detail"
 import { ProductRail } from "@/components/product/product-rail"
-import { categoryLabel } from "@/lib/catalog"
 import { getProduct, getRelatedProducts } from "@/lib/products-service"
 
-// Force dynamic rendering — data comes from Supabase at request time
 export const dynamic = "force-dynamic"
 
 export async function generateMetadata({
@@ -19,9 +17,7 @@ export async function generateMetadata({
     title: product
       ? `${product.title} — Native Made Accessories`
       : "Product — Native Made Accessories",
-    description: product?.description
-      ? product.description.slice(0, 160)
-      : `Shop at Native Made Accessories.`,
+    description: product?.description?.slice(0, 160) ?? "Shop at Native Made Accessories.",
   }
 }
 

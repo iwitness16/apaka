@@ -10,8 +10,11 @@ interface SearchResult {
   handle: string
   title: string
   price: number
-  images: string[]
+  main_image: string
   category: string
+  seller_name?: string
+  is_sale?: boolean
+  free_shipping?: boolean
 }
 
 export function SearchBar({ onClose }: { onClose?: () => void }) {
@@ -114,8 +117,7 @@ export function SearchBar({ onClose }: { onClose?: () => void }) {
     return () => document.removeEventListener("mousedown", handler)
   }, [])
 
-  const firstImage = (r: SearchResult) =>
-    r.images?.find((img) => img && !/\.heic(\?|$)/i.test(img)) ?? ""
+  const firstImage = (r: SearchResult) => r.main_image ?? ""
 
   return (
     <div ref={containerRef} className="relative w-full max-w-xl">
